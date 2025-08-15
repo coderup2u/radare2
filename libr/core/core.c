@@ -2445,7 +2445,6 @@ static RThreadFunctionRet thchan_handler(RThread *th) {
 	RCore *core = (RCore *)th->user;
 	// r_cons_thready ();
 	while (r_th_is_running (th) && !th->breaked) {
-		r_th_sem_wait (core->chan->sem); // busy because stack is empty
 		if (!r_th_is_running (th) || th->breaked) {
 			break;
 		}
@@ -2467,7 +2466,6 @@ static RThreadFunctionRet thchan_handler(RThread *th) {
 			cm->len = 0;
 		}
 		r_th_channel_post (core->chan, cm);
-		r_th_sem_post (cm->sem);
 	}
 	return 0;
 }
@@ -3899,6 +3897,9 @@ R_API char *r_core_cmd_str_r(RCore *core, const char *cmd) {
 	}
 	if (!core->chan) {
 		core->chan = r_th_channel_new (thchan_handler, core);
+		if (core->chan && core->chan->consumer) {
+			r_th_start (core->chan->consumer);
+		}
 	}
 	RThreadChannelMessage *message = r_th_channel_message_new (core->chan, (const ut8*)cmd, strlen (cmd) + 1);
 	RThreadChannelPromise *promise = r_th_channel_query (core->chan, message);

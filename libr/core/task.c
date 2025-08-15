@@ -420,6 +420,7 @@ static RThreadFunctionRet task_run(RCoreTask *task) {
 	RCore *core = task->core;
 	RCoreTaskScheduler *scheduler = &task->core->tasks;
 
+eprintf ("We run a command (%s)\n", task->cmd);
 	// Mark running and account the task under scheduler lock
 	TASK_SIGSET_T __old_sigset;
 	tasks_lock_enter (scheduler, &__old_sigset);
@@ -434,11 +435,16 @@ static RThreadFunctionRet task_run(RCoreTask *task) {
 
 	char *res_str;
 	if (task == scheduler->main_task) {
+eprintf ("We are in the main thread, no need to capture output\n");
 		r_core_cmd (core, task->cmd, task->cmd_log);
 		res_str = NULL;
 	} else {
-		res_str = r_core_cmd_str (core, task->cmd);
+eprintf ("Run the command in background and capture the output\n");
+			/* Execute via re-entrant channel to capture output safely from background threads */
+			res_str = r_core_cmd_str_r (core, task->cmd);
+eprintf ("Command output is (%s)\n", res_str);
 	}
+eprintf ("res (%s)\n", res_str);
 
 	free (task->res);
 	task->res = res_str;
@@ -492,6 +498,7 @@ static RThreadFunctionRet task_run_thread(RThread *th) {
 	// Set TLS current task for this thread during execution
 	task_tls_current = task;
 	RThreadFunctionRet ret = task_run (task);
+eprintf ("TASKURNING\n");
 	// Clear TLS on exit
 	task_tls_current = NULL;
 	return ret;
@@ -501,6 +508,7 @@ R_API void r_core_task_enqueue(RCoreTaskScheduler *scheduler, RCoreTask *task) {
 	if (!scheduler || !task) {
 		return;
 	}
+eprintf ("ENKEWE\n");
 	TASK_SIGSET_T old_sigset;
 	tasks_lock_enter (scheduler, &old_sigset);
 	if (!task->running_sem) {
@@ -516,6 +524,7 @@ R_API void r_core_task_enqueue(RCoreTaskScheduler *scheduler, RCoreTask *task) {
 	task->thread = r_th_new (task_run_thread, task, 0);
 	r_th_start (task->thread);
 
+eprintf ("leaving afters tart\n");
 	tasks_lock_leave (scheduler, &old_sigset);
 }
 

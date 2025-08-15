@@ -678,7 +678,9 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 #endif
 	}
 	do {
+R_LOG_INFO ("webserver start");
 		ret = r_core_rtr_http_run (core, launch, browse, path);
 	} while (ret == -2);
+R_LOG_INFO ("webserver stop");
 	return ret;
 }
