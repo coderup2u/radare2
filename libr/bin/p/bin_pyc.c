@@ -1,4 +1,4 @@
-/* radare - LGPL3 - Copyright 2016-2023 - c0riolis, x0urc3 */
+/* radare - LGPL3 - Copyright 2016-2025 - c0riolis, x0urc3 */
 
 #include <r_bin.h>
 #include "../format/pyc/pyc.h"
@@ -28,9 +28,6 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	ut32 m;
 	r_buf_read_at (buf, 0, (ut8 *)&m, sizeof (m));
 	RBinPycObj *obj = R_NEW0 (RBinPycObj);
-	if (!obj) {
-		return false;
-	}
 	obj->version = get_pyc_version (m);
 	bf->bo->bin_obj = obj;
 	return true;
@@ -59,9 +56,6 @@ static ut64 get_entrypoint(RBuffer *buf, ut32 magic, ut64 *out_code_start_offset
 static RBinInfo *info(RBinFile *arch) {
 	RBinPycObj *obj = arch && arch->bo ? (RBinPycObj *)arch->bo->bin_obj : NULL;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) {
-		return NULL;
-	}
 	ret->file = strdup (arch->file);
 	ret->type = r_str_newf ("Python %s byte-compiled file", obj? obj->version.version: "");
 	ret->bclass = strdup ("Python byte-compiled file");
@@ -87,10 +81,6 @@ static RList *entries(RBinFile *arch) {
 		return NULL;
 	}
 	RBinAddr *addr = R_NEW0 (RBinAddr);
-	if (!addr) {
-		r_list_free (entries);
-		return NULL;
-	}
 	ut64 entrypoint = get_entrypoint (arch->buf, obj? obj->version.magic: 0, obj? &obj->code_start_offset: NULL);
 	addr->paddr = entrypoint;
 	addr->vaddr = entrypoint;
@@ -148,10 +138,9 @@ static void destroy(RBinFile *bf) {
 	if (!obj) {
 		return;
 	}
-	// Follow previous ownership semantics: interned_table and cobjs contained heap items
 	r_list_free (obj->interned_table);
 	r_list_free (obj->cobjs);
-	r_list_free (obj->sections_cache);
+	// Causes Double free : r_list_free (obj->sections_cache);
 	free (obj);
 	bf->bo->bin_obj = NULL;
 }
