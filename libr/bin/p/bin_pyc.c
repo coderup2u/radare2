@@ -3,6 +3,7 @@
 #include <r_bin.h>
 #include "../format/pyc/pyc.h"
 
+#if 0
 typedef struct {
 	ut64 code_start_offset;
 	struct pyc_version version;
@@ -10,6 +11,7 @@ typedef struct {
 	RList *interned_table;     // RList<char*>
 	RList *cobjs;              // RList<pyc_code_object*>
 } RBinPycObj;
+#endif
 
 static bool check(RBinFile *bf, RBuffer *b) {
 	if (r_buf_size (b) > 4) {

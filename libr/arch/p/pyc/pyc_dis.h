@@ -6,6 +6,7 @@
 #include <r_util.h>
 #include <r_asm.h>
 
+#include "../../bin/format/pyc/pyc_magic.h"
 #include "opcode.h"
 
 typedef struct {
