@@ -11,7 +11,7 @@ struct pyc_version {
 	const char *version;
 	const char *revision;
 };
-#if 1
+
 typedef struct {
 	ut64 code_start_offset;
 	struct pyc_version version;
@@ -19,7 +19,6 @@ typedef struct {
 	RList *interned_table;     // RList<char*>
 	RList *cobjs;              // RList<pyc_code_object*>
 } RBinPycObj;
-#endif
 
 struct pyc_version get_pyc_version(ut32 magic);
 
