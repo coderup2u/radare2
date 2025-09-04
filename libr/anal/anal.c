@@ -10,68 +10,67 @@ static RAnalPlugin *anal_static_plugins[] = {
 	R_ANAL_STATIC_PLUGINS
 };
 
+#define DEFAULT_FCNPREFIX_RADIUS 0x1000
 // Choose function-name prefix based on config and nearby flags in the `prefix:` space.
 // - When dynamic prefixing is disabled, return the configured default (or "fcn").
 // - When enabled, search for the closest flag in space "prefix:" and whose name starts
 //   with the configured marker (default: "pfx.fcn."). The suffix after the marker is
 //   appended to "fcn." and returned. Falls back to the default on any miss.
 static const char *r_anal_choose_fcnprefix(RAnal *anal, ut64 addr) {
-    R_RETURN_VAL_IF_FAIL (anal, "fcn");
+	R_RETURN_VAL_IF_FAIL (anal, "fcn");
 
-    const char *defpfx = NULL;
-    const char *dyns = NULL;
-    const char *marker = NULL;
-    const char *radiuss = NULL;
+	const char *defpfx = NULL;
+	const char *dyns = NULL;
+	const char *marker = NULL;
+	const char *radiuss = NULL;
 
-    if (anal->coreb.cfgGet) {
-        defpfx = anal->coreb.cfgGet (anal->coreb.core, "anal.prefix.default");
-        dyns = anal->coreb.cfgGet (anal->coreb.core, "anal.prefix.dynamic");
-        marker = anal->coreb.cfgGet (anal->coreb.core, "anal.prefix.marker");
-        radiuss = anal->coreb.cfgGet (anal->coreb.core, "anal.prefix.radius");
-    }
+	if (anal->coreb.cfgGet) {
+		defpfx = anal->coreb.cfgGet (anal->coreb.core, "anal.prefix.default");
+		dyns = anal->coreb.cfgGet (anal->coreb.core, "anal.prefix.dynamic");
+		marker = anal->coreb.cfgGet (anal->coreb.core, "anal.prefix.marker");
+		radiuss = anal->coreb.cfgGet (anal->coreb.core, "anal.prefix.radius");
+	}
 
-    if (R_STR_ISEMPTY (defpfx)) {
-        defpfx = "fcn";
-    }
+	if (R_STR_ISEMPTY (defpfx)) {
+		defpfx = "fcn";
+	}
 
-    // Dynamic disabled or no cfg access: return default
-    bool dyn = r_str_is_true (dyns);
-    if (!dyn) {
-        return defpfx;
-    }
+	// Dynamic disabled or no cfg access: return default
+	bool dyn = r_str_is_true (dyns);
+	if (!dyn) {
+		return defpfx;
+	}
 
-    if (R_STR_ISEMPTY (marker)) {
-        marker = "pfx.fcn.";
-    }
+	if (R_STR_ISEMPTY (marker)) {
+		marker = "pfx.fcn.";
+	}
 
-    ut64 radius = 0x1000;
-    if (!R_STR_ISEMPTY (radiuss)) {
-        radius = r_num_math (NULL, radiuss);
-        if (!radius) {
-            radius = 0x1000; // be conservative on parse failures
-        }
-    }
+	ut64 radius = DEFAULT_FCNPREFIX_RADIUS;
+	if (!R_STR_ISEMPTY (radiuss)) {
+		radius = r_num_math (NULL, radiuss);
+		if (!radius) {
+			radius = DEFAULT_FCNPREFIX_RADIUS;
+		}
+	}
 
-    // Find closest flag in space "prefix:" and validate marker
-    if (!anal->flb.f) {
-        return defpfx;
-    }
-    RFlagItem *fi = r_flag_closest_in_space (anal->flb.f, "prefix:", addr, radius);
-    if (!fi || R_STR_ISEMPTY (fi->name)) {
-        return defpfx;
-    }
-    if (!r_str_startswith (fi->name, marker)) {
-        return defpfx;
-    }
+	// Find closest flag in space "prefix:" and validate marker
+	if (!anal->flb.f) {
+		return defpfx;
+	}
+	RFlagItem *fi = r_flag_closest_in_space (anal->flb.f, "prefix", addr, radius);
+	if (!fi || R_STR_ISEMPTY (fi->name)) {
+		return defpfx;
+	}
+	if (!r_str_startswith (fi->name, marker)) {
+		return defpfx;
+	}
 
-    const char *suffix = fi->name + strlen (marker);
-    if (R_STR_ISEMPTY (suffix)) {
-        return defpfx;
-    }
+	const char *suffix = fi->name + strlen (marker);
+	if (R_STR_ISEMPTY (suffix)) {
+		return defpfx;
+	}
 
-    // Build dynamic fcn prefix: "fcn.<suffix>"
-    r_strf_buffer (64);
-    return r_strf ("fcn.%s", suffix);
+	return suffix;
 }
 
 R_API void r_anal_set_limits(RAnal *anal, ut64 from, ut64 to) {

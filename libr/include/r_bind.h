@@ -46,7 +46,7 @@ typedef struct r_core_bind_t {
 	RCoreGetName getName;
 	RCoreGetNameDelta getNameDelta;
 	RCoreSeekArchBits archBits;
-	// R2_600 cfgGetB for booleans
+	// R2_600 TODO: cfgGetB for booleans
 	RCoreConfigGetI cfgGetI;
 	RCoreConfigGet cfgGet;
 	RCoreNumGet numGet;
